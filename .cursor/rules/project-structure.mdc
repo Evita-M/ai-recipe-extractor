@@ -1,0 +1,52 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Project Structure, Conventions, and Best Practices
+
+This monorepo is a Next.js project initialized with `pnpm dlx shadcn@latest init`, following shadcn/ui conventions. It is organized as follows:
+
+## Directory Layout
+- **[apps/web/](mdc:apps/web)**: Main Next.js app. Uses the `/app` directory for routing, layouts, and pages. Local components, hooks, and utilities are in their respective folders.
+- **[packages/ui/](mdc:packages/ui)**: Shared UI library (shadcn/ui pattern). Contains reusable components, hooks, utilities, and global styles (see `src/`).
+- **[packages/eslint-config/](mdc:packages/eslint-config)** and **[packages/typescript-config/](mdc:packages/typescript-config)**: Shared linting and TypeScript configs for consistency across the monorepo.
+- **[package.json](mdc:package.json)**, **[pnpm-workspace.yaml](mdc:pnpm-workspace.yaml)**, **[turbo.json](mdc:turbo.json)**: Monorepo and build configuration files.
+
+## Next.js Conventions
+- Uses the `/app` directory for file-based routing, layouts, and server components.
+- Main entry point is `app/layout.tsx` (root layout) and `app/page.tsx` (home page).
+- Local providers (e.g., theme, context) are placed in `components/providers.tsx` and used in the root layout.
+
+## shadcn/ui & Shared UI Library
+- Shared components (e.g., `Button`) are placed in `packages/ui/src/components/` and imported in apps as:
+  ```tsx
+  import { Button } from "@workspace/ui/components/button"
+  ```
+- Shared utilities (e.g., `cn`) are in `packages/ui/src/lib/`.
+- Shared hooks are in `packages/ui/src/hooks/`.
+- Global styles (including Tailwind and custom properties) are in `packages/ui/src/styles/globals.css` and re-exported via the UI package.
+- To add new components, use:
+  ```bash
+  pnpm dlx shadcn@latest add <component> -c apps/web
+  ```
+  This will place the component in the shared UI package.
+
+## Tailwind CSS
+- Tailwind is configured to work across the monorepo. Global styles are imported from the UI package.
+- Use utility classes and custom properties defined in `globals.css` for consistent theming.
+
+## Workspace & Package Management
+- All packages and apps are managed with pnpm workspaces (see `pnpm-workspace.yaml`).
+- Use workspace protocol for local dependencies (e.g., `@workspace/ui: workspace:*`).
+
+## Best Practices
+- Prefer shared components/hooks/utilities in `packages/ui` for reuse and consistency.
+- Use local `components/`, `hooks/`, and `lib/` in `apps/web` for app-specific logic.
+- Keep configuration (ESLint, TS, Tailwind) in shared packages for DRY principles.
+- Follow shadcn/ui and Next.js best practices for component structure, theming, and accessibility.
+
+Refer to this rule for conventions, structure, and best practices specific to this monorepo setup.
+
+
+
