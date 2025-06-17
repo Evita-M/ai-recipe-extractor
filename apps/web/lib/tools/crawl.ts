@@ -1,7 +1,10 @@
 import axios from 'axios';
 import { z } from 'zod';
 import { tool } from '@openai/agents';
+import { loadModule } from 'cld3-asm';
 import * as cheerio from 'cheerio';
+
+import { isSupportedLanguage } from '../utils/is-supported-language';
 
 function extractHtmlText(html: string): string {
   const $ = cheerio.load(html);
@@ -29,16 +32,13 @@ function extractHtmlText(html: string): string {
     '.sidebar',
   ];
 
-  // Remove irrelevant tags
   elementsToRemove.forEach((element) => {
     $(element).remove();
   });
 
-  // Optionally target only main content
   const main = $('main, article, .content, .post').first();
   const contentRoot = main.length ? main : $('body');
 
-  // Remove empty elements
   contentRoot.find('*').each((_, el) => {
     const $el = $(el);
     if (!$el.text().trim() && $el.children().length === 0) {
@@ -58,6 +58,7 @@ export const extractTextFromUrlTool = tool({
     url: z.string().describe('Must be a valid URL'),
   }),
   execute: async ({ url }: { url: string }) => {
+    let detectedLanguageCode: string;
     try {
       console.log(`Fetching HTML content from: ${url}`);
       const { data: html } = await axios.get(url, {
@@ -71,10 +72,27 @@ export const extractTextFromUrlTool = tool({
 
       const extractedHtmlText = extractHtmlText(html);
 
+      try {
+        const cld3 = await loadModule();
+        const langResult = cld3.create().findLanguage(extractedHtmlText);
+        detectedLanguageCode = langResult.language;
+
+        if (!isSupportedLanguage(detectedLanguageCode)) {
+          throw new Error('Language is not supported');
+        }
+      } catch (error) {
+        console.error('Error detecting language:', error);
+        throw new Error('Error detecting language');
+      }
+
       console.log(
-        `Successfully extracted ${extractedHtmlText.length} characters of content`
+        `Successfully extracted ${extractedHtmlText.length} characters of content and detected language code "${detectedLanguageCode}"`
       );
-      return extractedHtmlText;
+
+      return {
+        extractedHtmlText,
+        detectedLanguageCode,
+      };
     } catch (error) {
       console.error('Error fetching HTML:', error);
 

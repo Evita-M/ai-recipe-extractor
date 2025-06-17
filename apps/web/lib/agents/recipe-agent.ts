@@ -7,7 +7,7 @@ const recipeExtractorAgent = new Agent({
   name: 'Recipe Extractor',
   instructions: `
     You are a specialized agent tasked to extract a recipe from the web.
-    You are given a URL and you need to extract the recipe from the URL using your tools.`,
+    You are given a URL and you need to extract the recipe from the URL and detect the language of the recipe using your tools.`,
   tools: [extractTextFromUrlTool],
   outputType: recipeSchema,
   model: 'gpt-4o-mini',
