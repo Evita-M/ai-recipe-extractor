@@ -68,7 +68,9 @@ function createRecipeBlocks(
       object: 'block',
       type: 'heading_2',
       heading_2: {
-        rich_text: createRichText('🥘'),
+        rich_text: createRichText(
+          recipe.translatedHeadings?.ingredients ?? '🥘 Ingredients'
+        ),
       },
     });
     blocks.push(...createIngredientBlocks(recipe.ingredients));
@@ -80,7 +82,9 @@ function createRecipeBlocks(
       object: 'block',
       type: 'heading_2',
       heading_2: {
-        rich_text: createRichText('👩‍🍳'),
+        rich_text: createRichText(
+          recipe.translatedHeadings?.instructions ?? '👩‍🍳 Instructions'
+        ),
       },
     });
     blocks.push(...createInstructionBlocks(recipe.instructions));
