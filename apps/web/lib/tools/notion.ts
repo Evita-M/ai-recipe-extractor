@@ -1,11 +1,8 @@
 import { tool } from '@openai/agents';
-import {
-  BlockObjectRequest,
-  Client,
-  NotionClientError,
-} from '@notionhq/client';
+import { BlockObjectRequest, Client } from '@notionhq/client';
 import { z } from 'zod';
 import { recipeSchema, type Recipe } from '../types/recipe';
+import { getFlagEmoji } from '../utils/get-flag-emoji';
 
 const notion = new Client({ auth: process.env.NOTION_TOKEN });
 
@@ -45,6 +42,53 @@ function createInstructionBlocks(instructions: string[]): BlockObjectRequest[] {
   }));
 }
 
+/**
+ * Create recipe content blocks (ingredients and instructions)
+ */
+function createRecipeBlocks(
+  recipe: Recipe,
+  isTranslation = false
+): BlockObjectRequest[] {
+  const blocks: BlockObjectRequest[] = [];
+
+  // Add recipe description
+  if (recipe.description) {
+    blocks.push({
+      object: 'block',
+      type: 'paragraph',
+      paragraph: {
+        rich_text: createRichText(recipe.description),
+      },
+    });
+  }
+
+  // Add ingredients section
+  if (recipe.ingredients.length > 0) {
+    blocks.push({
+      object: 'block',
+      type: 'heading_2',
+      heading_2: {
+        rich_text: createRichText('🥘'),
+      },
+    });
+    blocks.push(...createIngredientBlocks(recipe.ingredients));
+  }
+
+  // Add instructions section
+  if (recipe.instructions.length > 0) {
+    blocks.push({
+      object: 'block',
+      type: 'heading_2',
+      heading_2: {
+        rich_text: createRichText('👩‍🍳'),
+      },
+    });
+    blocks.push(...createInstructionBlocks(recipe.instructions));
+  }
+
+  return blocks;
+}
+
 function capitalize(word: string) {
   return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
 }
@@ -52,28 +96,48 @@ function capitalize(word: string) {
 export const createNotionDatabaseItemTool = tool({
   name: 'notion_publisher',
   description:
-    'Can be used to create a new database item in a Notion database.',
+    'Creates a new database item in a Notion database with both original and translated recipe versions if available.',
+  strict: true,
   parameters: z.object({
     recipeData: z
       .string()
-      .describe('JSON string containing the parsed recipe data'),
+      .describe('JSON string containing the original recipe data'),
+    translatedRecipeData: z
+      .string()
+      .nullish()
+      .describe('Optional JSON string containing the translated recipe data'),
     sourceUrl: z.string().describe('Original recipe URL'),
+    targetLanguage: z
+      .string()
+      .nullish()
+      .describe('The language code of the translation if provided'),
   }),
   execute: async ({
     recipeData,
+    translatedRecipeData,
     sourceUrl,
+    targetLanguage,
   }: {
     recipeData: string;
+    translatedRecipeData?: string | null;
     sourceUrl: string;
+    targetLanguage?: string | null;
   }) => {
     try {
       console.log(
         `Creating database item for recipe in database: ${databaseId}`
       );
+
       let recipe: Recipe;
+      let translatedRecipe: Recipe | undefined;
+
       try {
-        recipe = JSON.parse(recipeData);
-        recipe = recipeSchema.parse(recipe);
+        recipe = recipeSchema.parse(JSON.parse(recipeData));
+        if (translatedRecipeData && translatedRecipeData !== null) {
+          translatedRecipe = recipeSchema.parse(
+            JSON.parse(translatedRecipeData)
+          );
+        }
       } catch (error) {
         throw new Error(
           `Invalid recipe data format: ${error instanceof Error ? error.message : 'Unknown error'}`
@@ -114,9 +178,6 @@ export const createNotionDatabaseItemTool = tool({
               name: recipe.difficulty ? capitalize(recipe.difficulty) : 'Easy',
             },
           },
-          ...(recipe.difficulty && {
-            Difficulty: { select: { name: recipe.difficulty } },
-          }),
           ...(recipe.prepTime && {
             'Prep Time': { rich_text: createRichText(recipe.prepTime) },
           }),
@@ -132,18 +193,13 @@ export const createNotionDatabaseItemTool = tool({
             Servings: { number: Number(recipe.servings) },
           }),
           Link: { rich_text: createRichText(sourceUrl) },
-          ...(recipe.servings &&
-            !isNaN(Number(recipe.servings)) && {
-              Servings: { number: Number(recipe.servings) },
-            }),
-        },
-      });
-
-      await notion.pages.update({
-        page_id: page.id,
-        icon: {
-          type: 'emoji',
-          emoji: '👩🏼‍🍳',
+          ...(targetLanguage && {
+            Translation: {
+              rich_text: createRichText(
+                `Includes ${targetLanguage.toUpperCase()} translation`
+              ),
+            },
+          }),
         },
         cover: {
           type: 'external',
@@ -151,94 +207,60 @@ export const createNotionDatabaseItemTool = tool({
             url: 'https://www.notion.so/images/page-cover/gradients_4.png',
           },
         },
+        icon: {
+          type: 'emoji',
+          emoji: '👩🏼‍🍳',
+        },
       });
-
-      console.log(`Created database item with ID: ${page.id}`);
 
       const blocks: BlockObjectRequest[] = [];
 
-      // Add recipe description
-      if (recipe.description) {
+      // Add original recipe content
+      blocks.push(...createRecipeBlocks(recipe));
+
+      // Add translated content if available
+      if (translatedRecipe && targetLanguage) {
+        const flagEmoji = getFlagEmoji(targetLanguage);
         blocks.push({
           object: 'block',
-          type: 'paragraph',
-          paragraph: {
-            rich_text: createRichText(recipe.description),
+          type: 'divider',
+          divider: {},
+        });
+
+        blocks.push({
+          object: 'block',
+          type: 'heading_1',
+          heading_1: {
+            rich_text: createRichText(
+              `${flagEmoji} ${targetLanguage.toUpperCase()}`
+            ),
           },
         });
+        blocks.push(...createRecipeBlocks(translatedRecipe, true));
       }
 
-      // Add divider
-      blocks.push({
-        object: 'block',
-        type: 'divider',
-        divider: {},
+      // Add all blocks to the page
+      await notion.blocks.children.append({
+        block_id: page.id,
+        children: blocks,
       });
 
-      // Add ingredients section
-      if (recipe.ingredients.length > 0) {
-        blocks.push({
-          object: 'block',
-          type: 'heading_2',
-          heading_2: {
-            rich_text: createRichText('🥘 Ingredients'),
-          },
-        });
-        blocks.push(...createIngredientBlocks(recipe.ingredients));
-      }
+      return {
+        success: true,
+        pageId: page.id,
+        url: `https://notion.so/${page.id.replace(/-/g, '')}`,
+      };
+    } catch (error) {
+      console.error('Error creating Notion database item:', error);
 
-      // Add instructions section
-      if (recipe.instructions.length > 0) {
-        blocks.push({
-          object: 'block',
-          type: 'heading_2',
-          heading_2: {
-            rich_text: createRichText('👩‍🍳 Instructions'),
-          },
-        });
-        blocks.push(...createInstructionBlocks(recipe.instructions));
-      }
-
-      // Add all blocks to the page in batches (max 100 blocks per request)
-      const batchSize = 100;
-      let totalBlocksAdded = 0;
-      for (let i = 0; i < blocks.length; i += batchSize) {
-        const batch = blocks.slice(i, i + batchSize);
-        await notion.blocks.children.append({
-          block_id: page.id,
-          children: batch,
-        });
-        totalBlocksAdded += batch.length;
-        console.log(
-          `Added batch of ${batch.length} blocks (${totalBlocksAdded}/${blocks.length} total)`
+      // Handle known Notion API errors
+      if (error && typeof error === 'object' && 'code' in error) {
+        throw new Error(
+          `Notion API error: ${(error as { message?: string }).message || 'Unknown error'}`
         );
       }
 
-      // Return only the essential page ID - no verbose description
-      return page.id;
-    } catch (error) {
-      console.error('Error creating Notion database item:', error);
-      if (error && typeof error === 'object' && 'code' in error) {
-        const notionError = error as NotionClientError;
-        switch (notionError.code) {
-          case 'object_not_found':
-            throw new Error(
-              `Notion database not found. Please check your database ID: ${databaseId}`
-            );
-          case 'unauthorized':
-            throw new Error(
-              'Unauthorized access to Notion. Please check your NOTION_TOKEN and database permissions.'
-            );
-          case 'validation_error':
-            throw new Error(
-              `Notion validation error: ${notionError.message || 'Invalid data format'}`
-            );
-          default:
-            throw new Error(
-              `Notion API error (${notionError.code}): ${notionError.message || 'Unknown error'}`
-            );
-        }
-      }
+      // Handle other errors
       throw new Error(
         `Failed to create Notion database item: ${error instanceof Error ? error.message : String(error)}`
       );

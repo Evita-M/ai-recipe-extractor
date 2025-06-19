@@ -43,6 +43,13 @@ export const recipeSchema = z.object({
     .string()
     .nullable()
     .describe('The recipe description or summary'),
+  translatedHeadings: z
+    .object({
+      ingredients: z.string(),
+      instructions: z.string(),
+    })
+    .nullish()
+    .describe('The translated headings for the recipe'),
 });
 
 export type Recipe = z.infer<typeof recipeSchema>;

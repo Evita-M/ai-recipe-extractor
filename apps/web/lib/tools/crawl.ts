@@ -3,8 +3,7 @@ import { z } from 'zod';
 import { tool } from '@openai/agents';
 import { loadModule } from 'cld3-asm';
 import * as cheerio from 'cheerio';
-
-import { isSupportedLanguage } from '../utils/is-supported-language';
+import { supportedLanguages } from '../types/language';
 
 function extractHtmlText(html: string): string {
   const $ = cheerio.load(html);
@@ -53,12 +52,13 @@ function extractHtmlText(html: string): string {
 export const extractTextFromUrlTool = tool({
   name: 'extract_text_from_url',
   description:
-    'Fetches the HTML content from a URL and extracts only the text.',
+    'Fetches the HTML content from a URL, extracts only the text, and validates that the recipe is in a supported language. This tool will throw an error if the detected language is not supported, stopping execution immediately.',
   parameters: z.object({
     url: z.string().describe('Must be a valid URL'),
   }),
   execute: async ({ url }: { url: string }) => {
-    let detectedLanguageCode: string;
+    let detectedLanguageCode: string | undefined;
+
     try {
       console.log(`Fetching HTML content from: ${url}`);
       const { data: html } = await axios.get(url, {
@@ -72,29 +72,49 @@ export const extractTextFromUrlTool = tool({
 
       const extractedHtmlText = extractHtmlText(html);
 
+      console.log(
+        `Successfully extracted ${extractedHtmlText.length} characters`
+      );
+
+      // Detect language of the extracted text
+      console.log('Detecting language of extracted text...');
       try {
         const cld3 = await loadModule();
         const langResult = cld3.create().findLanguage(extractedHtmlText);
         detectedLanguageCode = langResult.language;
 
-        if (!isSupportedLanguage(detectedLanguageCode)) {
-          throw new Error('Language is not supported');
+        console.log(
+          `Detected language: ${detectedLanguageCode} (confidence: ${langResult.probability})`
+        );
+
+        // Validate the detected language using Zod
+        const validatedLanguage =
+          supportedLanguages.parse(detectedLanguageCode);
+
+        console.log(`Language validation successful: ${validatedLanguage}`);
+
+        return {
+          extractedHtmlText,
+          detectedLanguage: validatedLanguage,
+          confidence: langResult.probability,
+        };
+      } catch (languageError) {
+        if (languageError instanceof z.ZodError) {
+          const supportedLanguagesList = supportedLanguages.options.join(', ');
+          const errorMessage = `Detected language "${detectedLanguageCode || 'unknown'}" is not supported. Supported languages: ${supportedLanguagesList}`;
+          console.error(errorMessage);
+          throw new Error(errorMessage);
         }
-      } catch (error) {
-        console.error('Error detecting language:', error);
+        console.error('Error detecting language:', languageError);
         throw new Error('Error detecting language');
       }
-
-      console.log(
-        `Successfully extracted ${extractedHtmlText.length} characters of content and detected language code "${detectedLanguageCode}"`
-      );
-
-      return {
-        extractedHtmlText,
-        detectedLanguageCode,
-      };
     } catch (error) {
       console.error('Error fetching HTML:', error);
+
+      // Re-throw language errors as-is to stop execution
+      if (error instanceof Error && error.message.includes('not supported')) {
+        throw error;
+      }
 
       if (axios.isAxiosError(error)) {
         if (error.response) {
