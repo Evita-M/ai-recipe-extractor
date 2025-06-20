@@ -12,7 +12,7 @@ import {
 } from '@workspace/ui/components/select';
 import { Formik, Form, FormikHelpers } from 'formik';
 import { toFormikValidationSchema } from 'zod-formik-adapter';
-import { isValid, z } from 'zod';
+import { z } from 'zod';
 
 export const recipeFormSchema = z.object({
   url: z.string().url('Please enter a valid URL'),
