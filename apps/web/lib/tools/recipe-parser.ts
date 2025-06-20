@@ -21,20 +21,15 @@ export const parseRecipeFromTextTool = tool({
     plainTextRecipe: string;
     parsedRecipe: Recipe;
   }) => {
-    console.log('Processing parsed recipe data...');
-
     try {
       console.log(
         `Processing text of length ${plainTextRecipe.length} characters`
       );
       console.log(`Parsed recipe: ${parsedRecipe.title}`);
-
-      // Validate that the parsed recipe conforms to the schema
       const validatedRecipe = recipeSchema.parse(parsedRecipe);
 
       return validatedRecipe;
     } catch (error) {
-      console.error('Error validating parsed recipe:', error);
       throw new Error(
         `Failed to validate parsed recipe: ${error instanceof Error ? error.message : 'Unknown error'}`
       );

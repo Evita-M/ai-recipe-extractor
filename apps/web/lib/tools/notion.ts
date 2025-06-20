@@ -2,22 +2,15 @@ import { tool } from '@openai/agents';
 import { BlockObjectRequest, Client } from '@notionhq/client';
 import { z } from 'zod';
 import { recipeSchema, type Recipe } from '../types/recipe';
-import { getFlagEmoji } from '../utils/get-flag-emoji';
 
 const notion = new Client({ auth: process.env.NOTION_TOKEN });
 
 const databaseId = process.env.NOTION_DATABASE_ID;
 
-/**
- * Create rich text content for Notion
- */
 function createRichText(content: string) {
   return [{ text: { content } }];
 }
 
-/**
- * Create formatted ingredient list as checkbox list
- */
 function createIngredientBlocks(ingredients: string[]): BlockObjectRequest[] {
   return ingredients.map((ingredient) => ({
     object: 'block',
@@ -29,9 +22,6 @@ function createIngredientBlocks(ingredients: string[]): BlockObjectRequest[] {
   }));
 }
 
-/**
- * Create formatted instruction list as numbered list
- */
 function createInstructionBlocks(instructions: string[]): BlockObjectRequest[] {
   return instructions.map((instruction) => ({
     object: 'block',
@@ -42,16 +32,12 @@ function createInstructionBlocks(instructions: string[]): BlockObjectRequest[] {
   }));
 }
 
-/**
- * Create recipe content blocks (ingredients and instructions)
- */
 function createRecipeBlocks(
   recipe: Recipe,
   isTranslation = false
 ): BlockObjectRequest[] {
   const blocks: BlockObjectRequest[] = [];
 
-  // Add recipe description
   if (recipe.description) {
     blocks.push({
       object: 'block',
@@ -62,7 +48,6 @@ function createRecipeBlocks(
     });
   }
 
-  // Add ingredients section
   if (recipe.ingredients.length > 0) {
     blocks.push({
       object: 'block',
@@ -76,7 +61,6 @@ function createRecipeBlocks(
     blocks.push(...createIngredientBlocks(recipe.ingredients));
   }
 
-  // Add instructions section
   if (recipe.instructions.length > 0) {
     blocks.push({
       object: 'block',
@@ -154,7 +138,6 @@ export const createNotionDatabaseItemTool = tool({
         );
       }
 
-      // Create a new database item (page) in the database
       const page = await notion.pages.create({
         parent: { database_id: databaseId },
         properties: {
@@ -200,7 +183,9 @@ export const createNotionDatabaseItemTool = tool({
           ...(targetLanguage && {
             Translation: {
               rich_text: createRichText(
-                `Includes ${targetLanguage.toUpperCase()} translation`
+                translatedRecipeData
+                  ? `Includes ${targetLanguage.toUpperCase()} translation`
+                  : 'No translation available'
               ),
             },
           }),
@@ -219,12 +204,10 @@ export const createNotionDatabaseItemTool = tool({
 
       const blocks: BlockObjectRequest[] = [];
 
-      // Add original recipe content
       blocks.push(...createRecipeBlocks(recipe));
 
-      // Add translated content if available
+      // Recipe translation if available
       if (translatedRecipe && targetLanguage) {
-        const flagEmoji = getFlagEmoji(targetLanguage);
         blocks.push({
           object: 'block',
           type: 'divider',
@@ -235,15 +218,12 @@ export const createNotionDatabaseItemTool = tool({
           object: 'block',
           type: 'heading_1',
           heading_1: {
-            rich_text: createRichText(
-              `${flagEmoji} ${targetLanguage.toUpperCase()}`
-            ),
+            rich_text: createRichText(`${targetLanguage.toUpperCase()}`),
           },
         });
         blocks.push(...createRecipeBlocks(translatedRecipe, true));
       }
 
-      // Add all blocks to the page
       await notion.blocks.children.append({
         block_id: page.id,
         children: blocks,
@@ -257,14 +237,12 @@ export const createNotionDatabaseItemTool = tool({
     } catch (error) {
       console.error('Error creating Notion database item:', error);
 
-      // Handle known Notion API errors
       if (error && typeof error === 'object' && 'code' in error) {
         throw new Error(
           `Notion API error: ${(error as { message?: string }).message || 'Unknown error'}`
         );
       }
 
-      // Handle other errors
       throw new Error(
         `Failed to create Notion database item: ${error instanceof Error ? error.message : String(error)}`
       );

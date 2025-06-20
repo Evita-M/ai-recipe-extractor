@@ -72,27 +72,19 @@ export const extractTextFromUrlTool = tool({
 
       const extractedHtmlText = extractHtmlText(html);
 
-      console.log(
-        `Successfully extracted ${extractedHtmlText.length} characters`
-      );
+      console.log(`Extracted ${extractedHtmlText.length} characters`);
 
-      // Detect language of the extracted text
-      console.log('Detecting language of extracted text...');
       try {
         const cld3 = await loadModule();
         const langResult = cld3.create().findLanguage(extractedHtmlText);
         detectedLanguageCode = langResult.language;
 
-        console.log(
-          `Detected language: ${detectedLanguageCode} (confidence: ${langResult.probability})`
-        );
-
-        // Validate the detected language using Zod
         const validatedLanguage =
           supportedLanguages.parse(detectedLanguageCode);
 
-        console.log(`Language validation successful: ${validatedLanguage}`);
-
+        console.log(
+          `Detected language: ${detectedLanguageCode} (confidence: ${langResult.probability})`
+        );
         return {
           extractedHtmlText,
           detectedLanguage: validatedLanguage,
@@ -100,18 +92,12 @@ export const extractTextFromUrlTool = tool({
         };
       } catch (languageError) {
         if (languageError instanceof z.ZodError) {
-          const supportedLanguagesList = supportedLanguages.options.join(', ');
-          const errorMessage = `Detected language "${detectedLanguageCode || 'unknown'}" is not supported. Supported languages: ${supportedLanguagesList}`;
-          console.error(errorMessage);
+          const errorMessage = `Detected language "${detectedLanguageCode || 'unknown'}" is not supported.`;
           throw new Error(errorMessage);
         }
-        console.error('Error detecting language:', languageError);
         throw new Error('Error detecting language');
       }
     } catch (error) {
-      console.error('Error fetching HTML:', error);
-
-      // Re-throw language errors as-is to stop execution
       if (error instanceof Error && error.message.includes('not supported')) {
         throw error;
       }
@@ -119,7 +105,7 @@ export const extractTextFromUrlTool = tool({
       if (axios.isAxiosError(error)) {
         if (error.response) {
           throw new Error(
-            `HTTP ${error.response.status}: ${error.response.statusText} - Failed to fetch ${url}`
+            `HTTP ${error.response.status}: ${error.response.statusText} - failed to fetch ${url}`
           );
         } else if (error.request) {
           throw new Error(`Network error: Unable to reach ${url}`);
