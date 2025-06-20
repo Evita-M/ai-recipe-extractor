@@ -78,12 +78,12 @@ recipe-agent/
 
 ## 🧑‍🍳 How Recipe Extraction Works
 
-1. **POST** to `/api/recipe` with `{ "url": "https://example.com/recipe-url", "targetLanguage": "cz" }`
+1. **POST** to `/api/recipe` with `{ "url": "https://example.com/recipe-url", "targetLanguage": "cs" }`
 2. The pipeline:
 - Crawls the webpage and extracts clean, readable text.
 - Detects the recipe's language (supported languages: English, Czech, and Greek).
 - Uses OpenAI to convert the recipe into a structured JSON schema.
-- Translates the recipe into the target language, only if different from the detected language. (optional)
+- Translates the recipe into the target language (based on ISO 639-1), only if different from the detected language. (optional)
 - Publishes the recipe to your Notion database, including all fields and content blocks. For now Notion DB must already exist and item schema needs to be identical as the created recipe.
 
 3. **Response**: Success message and result details
@@ -93,7 +93,7 @@ recipe-agent/
 ```bash
 curl -X POST http://localhost:3000/api/recipe \
   -H "Content-Type: application/json" \
-  -d '{"url": "https://www.example.com/your-favorite-recipe", "targetLanguage": "cz"}'
+  -d '{"url": "https://www.example.com/your-favorite-recipe", "targetLanguage": "cs"}'
 ```
 
 **Sample Response:**
