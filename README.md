@@ -17,10 +17,10 @@ https://user-images.githubusercontent.com/58986949/3a9f53a5-aa1a-432f-887c-fc810
 
 ## 🚀 Features
 
-- **Extract recipes** from any URL, supported languages for now are English, Greek and Czech
+- **Extract recipes** from any URL
 - **Detect language** of the recipe text
-- **Translate the recipe** to one of the supported languages (optional)
-- **Save recipes** to your Notion database (with all key fields and content blocks), for now existing Notion DB needs to have the exact properties schema as the recipe
+- **Translate the recipe** (optional)
+- **Save recipes** to your Notion database (with all key fields and content blocks)
 - **OpenAI-powered** multi-agent pipeline for smart extraction and publishing
 - **REST API** for easy integration
 - **Monorepo** with shared UI components and configs
@@ -80,9 +80,12 @@ recipe-agent/
 
 1. **POST** to `/api/recipe` with `{ "url": "https://example.com/recipe-url" }`
 2. The pipeline:
-   - Crawls the page and extracts clean text
-   - Uses OpenAI to parse recipe data
-   - Publishes the recipe to your Notion database (with all fields and content blocks)
+- Crawls the webpage and extracts clean, readable text.
+- Detects the recipe's language (supported languages: English, Czech, and Greek).
+- Uses OpenAI to convert the recipe into a structured JSON schema.
+- Translates the recipe into the target language, if different from the detected language.
+- Publishes the recipe to your Notion database, including all fields and content blocks. For now Notion DB must already exist and item schema needs to be identical as the created recipe.
+
 3. **Response**: Success message and result details
 
 ### Example: Extract a Recipe Using `curl`
