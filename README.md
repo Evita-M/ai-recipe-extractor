@@ -93,7 +93,7 @@ recipe-agent/
 ```bash
 curl -X POST http://localhost:3000/api/recipe \
   -H "Content-Type: application/json" \
-  -d '{"url": "https://www.example.com/your-favorite-recipe"}'
+  -d '{"url": "https://www.example.com/your-favorite-recipe", "targetLanguage": "cz"}'
 ```
 
 **Sample Response:**
