@@ -17,8 +17,10 @@ https://user-images.githubusercontent.com/58986949/3a9f53a5-aa1a-432f-887c-fc810
 
 ## 🚀 Features
 
-- **Extract recipes** from any URL
-- **Save recipes** to your Notion database (with all key fields and content blocks)
+- **Extract recipes** from any URL, supported languages for now are English, Greek and Czech
+- **Detect language** of the recipe text
+- **Translate the recipe** to one of the supported languages (optional)
+- **Save recipes** to your Notion database (with all key fields and content blocks), for now existing Notion DB needs to have the exact properties schema as the recipe
 - **OpenAI-powered** multi-agent pipeline for smart extraction and publishing
 - **REST API** for easy integration
 - **Monorepo** with shared UI components and configs
