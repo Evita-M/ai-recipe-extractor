@@ -12,7 +12,7 @@ import {
 } from '@workspace/ui/components/select';
 import { Formik, Form, FormikHelpers } from 'formik';
 import { toFormikValidationSchema } from 'zod-formik-adapter';
-import { z } from 'zod';
+import { isValid, z } from 'zod';
 
 export const recipeFormSchema = z.object({
   url: z.string().url('Please enter a valid URL'),
@@ -41,8 +41,9 @@ export const RecipeForm = ({ onSubmit, initialValues }: RecipeFormProps) => {
       onSubmit={onSubmit}
       validationSchema={toFormikValidationSchema(recipeFormSchema)}
       initialValues={initialValues}
+      validateOnMount
     >
-      {({ errors, touched, handleChange, values, isSubmitting }) => (
+      {({ errors, touched, handleChange, values, isSubmitting, isValid }) => (
         <Form className="space-y-4">
           <div className="flex flex-col gap-2">
             <Label htmlFor="url" isRequired>
@@ -52,7 +53,7 @@ export const RecipeForm = ({ onSubmit, initialValues }: RecipeFormProps) => {
               id="url"
               name="url"
               type="url"
-              placeholder="Enter recipe URL"
+              placeholder="https://www.example.com/greek-salad-recipe"
               value={values.url}
               onChange={handleChange}
               className={errors.url && touched.url ? 'border-red-500' : ''}
@@ -94,7 +95,11 @@ export const RecipeForm = ({ onSubmit, initialValues }: RecipeFormProps) => {
               </span>
             )}
           </div>
-          <Button type="submit" disabled={isSubmitting} className="w-full mt-4">
+          <Button
+            type="submit"
+            disabled={isSubmitting || !isValid}
+            className="w-full mt-4"
+          >
             {isSubmitting ? 'Processing...' : 'Create Notion Recipe'}
           </Button>
         </Form>
