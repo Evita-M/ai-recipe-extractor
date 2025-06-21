@@ -3,7 +3,6 @@ import { run } from '@openai/agents';
 import { z } from 'zod';
 import { recipeAgent } from '@/lib/agents/recipe-agent';
 import { supportedLanguages } from '@/lib/types/language';
-import { isSupportedLanguage } from '@/lib/utils/is-supported-language';
 
 // Input validation schema
 const requestSchema = z.object({
@@ -20,14 +19,15 @@ export async function POST(req: NextRequest) {
 
     console.log(`Processing recipe from: ${url}`);
 
-    if (targetLanguage && !isSupportedLanguage(targetLanguage)) {
-      throw new Error('Target language is not supported');
-    }
-
     if (!process.env.NOTION_DATABASE_ID) {
       throw new Error(
         'NOTION_DATABASE_ID is not set in the environment variables'
       );
+    }
+
+    const validatedLanguage = supportedLanguages.parse(targetLanguage);
+    if (!validatedLanguage) {
+      throw new Error('Target language is not supported');
     }
 
     // Use concise prompt for token efficiency
