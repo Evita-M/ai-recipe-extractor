@@ -4,7 +4,6 @@ import { z } from 'zod';
 import { recipeAgent } from '@/lib/agents/recipe-agent';
 import { supportedLanguages } from '@/lib/types/language';
 
-// Input validation schema
 const requestSchema = z.object({
   url: z.string().describe('Must be a valid URL'),
   targetLanguage: supportedLanguages
@@ -30,12 +29,11 @@ export async function POST(req: NextRequest) {
       throw new Error('Target language is not supported');
     }
 
-    // Use concise prompt for token efficiency
     const result = await run(
       recipeAgent,
       `URL: ${url}\nDatabase: ${process.env.NOTION_DATABASE_ID}\nTarget language: ${targetLanguage}`,
       {
-        maxTurns: 10, // Allow enough turns for the multi-agent workflow
+        maxTurns: 6,
       }
     );
 
