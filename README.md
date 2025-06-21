@@ -13,11 +13,13 @@
 
 A modern web app that extracts recipes from any website and saves them to your Notion database using OpenAI agents. Built with Next.js, TypeScript, and a shared UI component library.
 
-<img width="680" alt="image" src="https://github.com/user-attachments/assets/06766adc-c944-40d9-ae07-f1d2b6805779" />
+https://user-images.githubusercontent.com/58986949/3a9f53a5-aa1a-432f-887c-fc810f8f56a8.mp4
 
 ## 🚀 Features
 
 - **Extract recipes** from any URL
+- **Detect language** of the recipe text
+- **Translate the recipe** (optional)
 - **Save recipes** to your Notion database (with all key fields and content blocks)
 - **OpenAI-powered** multi-agent pipeline for smart extraction and publishing
 - **REST API** for easy integration
@@ -76,11 +78,14 @@ recipe-agent/
 
 ## 🧑‍🍳 How Recipe Extraction Works
 
-1. **POST** to `/api/recipe` with `{ "url": "https://example.com/recipe-url" }`
+1. **POST** to `/api/recipe` with `{ "url": "https://example.com/recipe-url", "targetLanguage": "cs" }`
 2. The pipeline:
-   - Crawls the page and extracts clean text
-   - Uses OpenAI to parse recipe data
-   - Publishes the recipe to your Notion database (with all fields and content blocks)
+- Crawls the webpage and extracts clean, readable text.
+- Detects the recipe's language (supported languages: English, Czech, and Greek).
+- Uses OpenAI to convert the recipe into a structured JSON schema.
+- Translates the recipe into the target language (based on ISO 639-1), only if different from the detected language. (optional)
+- Publishes the recipe to your Notion database, including all fields and content blocks. For now Notion DB must already exist and item schema needs to be identical as the created recipe.
+
 3. **Response**: Success message and result details
 
 ### Example: Extract a Recipe Using `curl`
@@ -88,7 +93,7 @@ recipe-agent/
 ```bash
 curl -X POST http://localhost:3000/api/recipe \
   -H "Content-Type: application/json" \
-  -d '{"url": "https://www.example.com/your-favorite-recipe"}'
+  -d '{"url": "https://www.example.com/your-favorite-recipe", "targetLanguage": "cs"}'
 ```
 
 **Sample Response:**
