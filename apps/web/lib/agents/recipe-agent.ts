@@ -6,7 +6,7 @@ import { recipeSchema } from '../types/recipe';
 import z from 'zod';
 
 const parseRecipeFromUrlAgent = new Agent({
-  name: 'Parse Recipe From Url Agent',
+  name: 'recipe_from_url_parser',
   instructions: `
     You are a specialized agent tasked to get a recipe from the web and validate its language.
   `,
@@ -20,7 +20,7 @@ const parseRecipeFromUrlAgent = new Agent({
 });
 
 export const recipeAgent = new Agent({
-  name: 'Recipe Agent',
+  name: 'recipe_agent',
   outputType: z.object({
     success: z
       .boolean()
@@ -46,7 +46,7 @@ export const recipeAgent = new Agent({
     - When skipping translation, pass the original recipe directly to Notion
   `,
   tools: [
-    parseRecipeFromUrlAgent.asTool({}),
+    parseRecipeFromUrlAgent.asTool({ toolName: 'parse_recipe_from_url' }),
     translateRecipeTool,
     createNotionDatabaseItemTool,
   ],

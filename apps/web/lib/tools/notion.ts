@@ -82,7 +82,7 @@ function capitalize(word: string) {
 }
 
 export const createNotionDatabaseItemTool = tool({
-  name: 'notion_publisher',
+  name: 'publish_recipe_to_notion',
   description:
     'Creates a new database item in a Notion database with both original and translated recipe versions if available.',
   strict: true,
