@@ -16,33 +16,84 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { url, targetLanguage } = requestSchema.parse(body);
 
-    console.log(`Processing recipe from: ${url}`);
+    const stream = new ReadableStream({
+      async start(controller) {
+        const encoder = new TextEncoder();
+        // const logger = new RecipeAgentLogger();
 
-    if (!process.env.NOTION_DATABASE_ID) {
-      throw new Error(
-        'NOTION_DATABASE_ID is not set in the environment variables'
-      );
-    }
+        const sendEvent = (data: object) => {
+          controller.enqueue(
+            encoder.encode(`data: ${JSON.stringify(data)}\n\n`)
+          );
+        };
 
-    const validatedLanguage = supportedLanguages.parse(targetLanguage);
-    if (!validatedLanguage) {
-      throw new Error('Target language is not supported');
-    }
+        try {
+          console.log(`Processing recipe from: ${url}`);
 
-    const result = await run(
-      recipeAgent,
-      `URL: ${url}\nDatabase: ${process.env.NOTION_DATABASE_ID}\nTarget language: ${targetLanguage}`,
-      {
-        maxTurns: 6,
-      }
-    );
+          if (!process.env.NOTION_DATABASE_ID) {
+            throw new Error(
+              'NOTION_DATABASE_ID is not set in the environment variables'
+            );
+          }
 
-    console.log('Agent orchestration completed successfully');
+          if (targetLanguage) {
+            const validatedLanguage = supportedLanguages.parse(targetLanguage);
+            if (!validatedLanguage) {
+              throw new Error('Target language is not supported');
+            }
+          }
 
-    return NextResponse.json({
-      success: true,
-      result: result.finalOutput,
-      message: `Successfully processed recipe from ${url}`,
+          const stream = await run(
+            recipeAgent,
+            `URL: ${url}\nDatabase: ${process.env.NOTION_DATABASE_ID}\nTarget language: ${targetLanguage}`,
+            {
+              maxTurns: 6,
+              stream: true,
+            }
+          );
+
+          for await (const event of stream) {
+            // await logger.append(event);
+            if (event.type === 'raw_model_stream_event') {
+              const eventData = event.data;
+
+              if (eventData.type === 'model') {
+                const modelEvent = eventData.event;
+                if (
+                  modelEvent.type === 'response.output_item.added' ||
+                  modelEvent.type === 'response.output_item.done'
+                ) {
+                  const item = modelEvent.item;
+
+                  if (item.type === 'function_call') {
+                    sendEvent({
+                      status: item.status,
+                      toolName: item.name,
+                    });
+                  }
+                }
+              }
+            }
+          }
+
+          sendEvent({
+            status: 'completed',
+            message: 'Successfully processed recipe',
+          });
+        } catch (error) {
+          sendEvent({ status: 'failed', error: 'Failed to process recipe' });
+        } finally {
+          controller.close();
+        }
+      },
+    });
+
+    return new Response(stream, {
+      headers: {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        Connection: 'keep-alive',
+      },
     });
   } catch (error) {
     console.error('Recipe extraction error:', error);
