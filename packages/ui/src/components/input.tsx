@@ -4,7 +4,6 @@ import { cn } from '@workspace/ui/lib/utils';
 import { ComponentProps } from 'react';
 
 function Input({ className, type, ...props }: ComponentProps<'input'>) {
-  console.log(props);
   return (
     <input
       type={type}
