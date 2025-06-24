@@ -1,6 +1,5 @@
 'use client';
 
-import axios from 'axios';
 import { toast } from 'sonner';
 import {
   Card,
@@ -11,32 +10,76 @@ import {
 import { RecipeForm } from '@/components/forms/recipe';
 import { FormikHelpers } from 'formik';
 import { RecipeFormValues } from '@/components/forms/recipe';
+import { useState } from 'react';
+import {
+  initialStepStatuses,
+  Stepper,
+  StepStatus,
+  StepType,
+} from '@/components/stepper';
 
 export default function Page() {
+  const [stepStatuses, setStepStatuses] =
+    useState<Record<StepType, StepStatus>>(initialStepStatuses);
+
   const handleSubmit = async (
     values: RecipeFormValues,
     helpers: FormikHelpers<RecipeFormValues>
   ) => {
+    setStepStatuses(initialStepStatuses);
     const { url, targetLanguage } = values;
     if (!url) return;
 
     try {
-      await axios.post('/api/recipe', {
-        url,
-        targetLanguage: targetLanguage || undefined,
+      const response = await fetch('/api/recipe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          url,
+          targetLanguage: targetLanguage || undefined,
+        }),
       });
 
-      toast.success('Recipe created successfully!');
-    } catch (err) {
-      if (axios.isAxiosError(err)) {
-        toast.error(
-          err.response?.data?.message ||
-            err.message ||
-            'Failed to process recipe'
-        );
-      } else {
-        toast.error('Something went wrong');
+      if (!response.body) throw new Error('No response body');
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+
+        const events = buffer.split('\n\n');
+        buffer = events.pop() || '';
+        for (const event of events) {
+          if (event.startsWith('data: ')) {
+            const data = JSON.parse(event.slice(6));
+            if (data.toolName === StepType.PARSE_RECIPE) {
+              setStepStatuses((prev) => ({
+                ...prev,
+                [StepType.PARSE_RECIPE]: data.status,
+              }));
+            }
+            if (data.toolName === StepType.TRANSLATE_RECIPE) {
+              setStepStatuses((prev) => ({
+                ...prev,
+                [StepType.TRANSLATE_RECIPE]: data.status,
+              }));
+            }
+            if (data.toolName === StepType.PUBLISH_RECIPE) {
+              setStepStatuses((prev) => ({
+                ...prev,
+                [StepType.PUBLISH_RECIPE]: data.status,
+              }));
+            }
+          }
+        }
       }
+      toast.success('Recipe published successfully');
+    } catch (err) {
+      toast.error('Something went wrong');
     } finally {
       helpers.setSubmitting(false);
       helpers.resetForm();
@@ -44,8 +87,11 @@ export default function Page() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-svh bg-zinc-50">
-      <Card className="w-full max-w-xl mx-4">
+    <div className="flex flex-col items-center justify-center min-h-svh bg-zinc-50">
+      <div className="w-full max-w-md ">
+        <Stepper stepStatuses={stepStatuses} />
+      </div>
+      <Card className="w-full max-w-xl mx-4 mt-4">
         <CardHeader className="text-center">
           <CardTitle className="text-3xl font-medium tracking-tight text-zinc-900 mb-4">
             Recipe to Notion

@@ -2,6 +2,7 @@ import { tool } from '@openai/agents';
 import { BlockObjectRequest, Client } from '@notionhq/client';
 import { z } from 'zod';
 import { recipeSchema, type Recipe } from '../types/recipe';
+import { normalizeRecipe } from '../utils/normalize-recipe';
 
 const notion = new Client({ auth: process.env.NOTION_TOKEN });
 
@@ -32,10 +33,7 @@ function createInstructionBlocks(instructions: string[]): BlockObjectRequest[] {
   }));
 }
 
-function createRecipeBlocks(
-  recipe: Recipe,
-  isTranslation = false
-): BlockObjectRequest[] {
+function createRecipeBlocks(recipe: Recipe): BlockObjectRequest[] {
   const blocks: BlockObjectRequest[] = [];
 
   if (recipe.description) {
@@ -120,10 +118,10 @@ export const createNotionDatabaseItemTool = tool({
       let translatedRecipe: Recipe | undefined;
 
       try {
-        recipe = recipeSchema.parse(JSON.parse(recipeData));
+        recipe = recipeSchema.parse(normalizeRecipe(JSON.parse(recipeData)));
         if (translatedRecipeData && translatedRecipeData !== null) {
           translatedRecipe = recipeSchema.parse(
-            JSON.parse(translatedRecipeData)
+            normalizeRecipe(JSON.parse(translatedRecipeData))
           );
         }
       } catch (error) {
@@ -221,7 +219,7 @@ export const createNotionDatabaseItemTool = tool({
             rich_text: createRichText(`${targetLanguage.toUpperCase()}`),
           },
         });
-        blocks.push(...createRecipeBlocks(translatedRecipe, true));
+        blocks.push(...createRecipeBlocks(translatedRecipe));
       }
 
       await notion.blocks.children.append({
