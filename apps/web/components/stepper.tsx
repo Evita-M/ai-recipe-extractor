@@ -3,7 +3,7 @@ import { FileSearch, Languages, Send } from 'lucide-react';
 import { LoadingDots } from '@workspace/ui/components/loading-dots';
 
 export enum StepType {
-  PARSE_RECIPE = 'parse_recipe_from_url',
+  EXTRACT_RECIPE = 'extract_structured_output',
   TRANSLATE_RECIPE = 'translate_recipe',
   PUBLISH_RECIPE = 'publish_recipe_to_notion',
 }
@@ -15,7 +15,7 @@ export enum StepStatus {
 }
 
 export const initialStepStatuses: Record<StepType, StepStatus> = {
-  [StepType.PARSE_RECIPE]: StepStatus.IDLE,
+  [StepType.EXTRACT_RECIPE]: StepStatus.IDLE,
   [StepType.TRANSLATE_RECIPE]: StepStatus.IDLE,
   [StepType.PUBLISH_RECIPE]: StepStatus.IDLE,
 };
@@ -39,7 +39,7 @@ const IN_PROGRESS_COLOR = {
 
 const stepMeta = [
   {
-    type: StepType.PARSE_RECIPE,
+    type: StepType.EXTRACT_RECIPE,
     label: 'Parsing',
     icon: FileSearch,
   },
@@ -84,7 +84,7 @@ function computeStepStatuses(
   backendStatuses: Partial<Record<StepType, StepStatus>>
 ): Record<StepType, StepStatus> {
   const steps: StepType[] = [
-    StepType.PARSE_RECIPE,
+    StepType.EXTRACT_RECIPE,
     StepType.TRANSLATE_RECIPE,
     StepType.PUBLISH_RECIPE,
   ];
@@ -132,7 +132,7 @@ export const Stepper: React.FC<StepperProps> = ({
 
   // Check if all visible steps are completed
   const allCompleted =
-    computedStatuses[StepType.PARSE_RECIPE] === StepStatus.COMPLETED &&
+    computedStatuses[StepType.EXTRACT_RECIPE] === StepStatus.COMPLETED &&
     computedStatuses[StepType.PUBLISH_RECIPE] === StepStatus.COMPLETED;
 
   return (

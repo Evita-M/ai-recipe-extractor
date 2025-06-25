@@ -41,6 +41,10 @@ export default function Page() {
       });
 
       if (!response.body) throw new Error('No response body');
+      if (response.status !== 200) {
+        const error = await response.json();
+        throw new Error(error.error);
+      }
 
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
@@ -56,10 +60,10 @@ export default function Page() {
         for (const event of events) {
           if (event.startsWith('data: ')) {
             const data = JSON.parse(event.slice(6));
-            if (data.toolName === StepType.PARSE_RECIPE) {
+            if (data.toolName === StepType.EXTRACT_RECIPE) {
               setStepStatuses((prev) => ({
                 ...prev,
-                [StepType.PARSE_RECIPE]: data.status,
+                [StepType.EXTRACT_RECIPE]: data.status,
               }));
             }
             if (data.toolName === StepType.TRANSLATE_RECIPE) {
@@ -79,7 +83,7 @@ export default function Page() {
       }
       toast.success('Recipe published successfully');
     } catch (err) {
-      toast.error('Something went wrong');
+      toast.error(err instanceof Error ? err.message : 'Something went wrong');
     } finally {
       helpers.setSubmitting(false);
       helpers.resetForm();
