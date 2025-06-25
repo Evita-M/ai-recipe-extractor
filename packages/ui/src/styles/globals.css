@@ -3,8 +3,6 @@
 @source "../../../components/**/*.{ts,tsx}";
 @source "../**/*.{ts,tsx}";
 
-@import 'tw-animate-css';
-
 :root {
   --background: #ffffff;
   --foreground: #1a1a1a;
@@ -17,21 +15,17 @@
   --secondary-hover: #1e293b;
   --secondary-foreground: #ffffff;
 
-  --accent: #0ea5e9; /* Sky blue */
-  --accent-hover: #0284c7;
-  --accent-foreground: #ffffff;
-
-  --success: #22c55e;
+  --success: #50c878;
   --success-foreground: #ffffff;
   --warning: #f59e0b;
   --warning-foreground: #ffffff;
   --destructive: #ef4444;
   --destructive-foreground: #ffffff;
-  --info: #3b82f6;
+  --info: #66cdaa;
   --info-foreground: #ffffff;
 
-  --muted: #f1f5f9;
-  --muted-foreground: #64748b;
+  --muted: #eceef1;
+  --muted-foreground: #b4bbc7;
   --card: #ffffff;
   --card-foreground: var(--foreground);
   --popover: #ffffff;
@@ -39,25 +33,11 @@
   --border: #e2e8f0;
   --input: #e2e8f0;
   --ring: #94a3b8;
-
   --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
-
-  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-  --shadow-lg:
-    0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
 }
 
 @layer base {
   body {
     height: 100%;
   }
-}
-
-/* Transition easings */
-:root {
-  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
-  --ease-in: cubic-bezier(0.4, 0, 1, 1);
-  --ease-out: cubic-bezier(0, 0, 0.2, 1);
-  --ease-linear: linear;
 }
