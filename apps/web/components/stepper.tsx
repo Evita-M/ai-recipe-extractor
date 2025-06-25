@@ -1,6 +1,5 @@
 import React from 'react';
 import { FileSearch, Languages, Send } from 'lucide-react';
-
 import { LoadingDots } from '@workspace/ui/components/loading-dots';
 
 export enum StepType {
@@ -21,10 +20,22 @@ export const initialStepStatuses: Record<StepType, StepStatus> = {
   [StepType.PUBLISH_RECIPE]: StepStatus.IDLE,
 };
 
-const COMPLETED_COLOR = '#71BC78';
-const FAILED_COLOR = '#EF4444';
-const IDLE_COLOR = '#d7ddd9'; // Tailwind's zinc-300
-const IN_PROGRESS_COLOR = '#a5d5a9'; // Tailwind's yellow-400
+const COMPLETED_COLOR = {
+  text: 'var(--success-foreground)',
+  background: 'var(--success)',
+};
+const FAILED_COLOR = {
+  text: 'var(--destructive-foreground)',
+  background: 'var(--destructive)',
+};
+const IDLE_COLOR = {
+  text: 'var(--muted-foreground)',
+  background: 'var(--muted)',
+};
+const IN_PROGRESS_COLOR = {
+  text: 'var(--info-foreground)',
+  background: 'var(--info)',
+};
 
 const stepMeta = [
   {
@@ -48,20 +59,23 @@ function getStepStyles(status: StepStatus) {
   switch (status) {
     case StepStatus.COMPLETED:
       return {
-        icon: 'text-white',
-        backgroundColor: COMPLETED_COLOR,
+        iconColor: COMPLETED_COLOR.text,
+        backgroundColor: COMPLETED_COLOR.background,
       };
     case StepStatus.FAILED:
-      return { icon: 'text-white', backgroundColor: FAILED_COLOR };
+      return {
+        iconColor: FAILED_COLOR.text,
+        backgroundColor: FAILED_COLOR.background,
+      };
     case StepStatus.IN_PROGRESS:
       return {
-        icon: 'text-white',
-        backgroundColor: IN_PROGRESS_COLOR,
+        iconColor: IN_PROGRESS_COLOR.text,
+        backgroundColor: IN_PROGRESS_COLOR.background,
       };
     default:
       return {
-        icon: 'text-white',
-        backgroundColor: IDLE_COLOR,
+        iconColor: IDLE_COLOR.text,
+        backgroundColor: IDLE_COLOR.background,
       };
   }
 }
@@ -125,7 +139,7 @@ export const Stepper: React.FC<StepperProps> = ({
     <div className="flex gap-0 justify-center items-center w-full">
       {filteredStepMeta.map(({ type, icon: Icon }, idx) => {
         const status = computedStatuses[type];
-        const { backgroundColor } = getStepStyles(status);
+        const { backgroundColor, iconColor } = getStepStyles(status);
 
         let showStreaming = false;
         if (!allCompleted && idx < filteredStepMeta.length - 1) {
@@ -156,15 +170,19 @@ export const Stepper: React.FC<StepperProps> = ({
                     ? 'animate-pulse scale-110'
                     : ''
                 }`}
-                style={{ backgroundColor }}
+                style={{ backgroundColor: backgroundColor }}
               >
-                <Icon className={`w-6 h-6 text-white`} />
+                <Icon className="w-6 h-6" style={{ color: iconColor }} />
               </div>
             </div>
             {idx < filteredStepMeta.length - 1 && (
               <div className="flex justify-center items-center w-[80px]">
                 <LoadingDots
-                  color={showStreaming ? IN_PROGRESS_COLOR : IDLE_COLOR}
+                  color={
+                    showStreaming
+                      ? IN_PROGRESS_COLOR.background
+                      : IDLE_COLOR.text
+                  }
                   size={44}
                   isAnimated={showStreaming ? true : false}
                 />
