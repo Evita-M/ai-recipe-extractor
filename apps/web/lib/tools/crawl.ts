@@ -98,20 +98,6 @@ export const extractTextFromUrlTool = tool({
         throw new Error('Error detecting language');
       }
     } catch (error) {
-      if (error instanceof Error && error.message.includes('not supported')) {
-        throw error;
-      }
-
-      if (axios.isAxiosError(error)) {
-        if (error.response) {
-          throw new Error(
-            `HTTP ${error.response.status}: ${error.response.statusText} - failed to fetch ${url}`
-          );
-        } else if (error.request) {
-          throw new Error(`Network error: Unable to reach ${url}`);
-        }
-      }
-
       throw new Error(
         `Failed to fetch content from ${url}: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
