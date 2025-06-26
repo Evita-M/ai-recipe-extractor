@@ -13,7 +13,7 @@
 
 A modern web app that extracts recipes from any website and saves them to your Notion database using OpenAI agents. Built with Next.js, TypeScript, and a shared UI component library.
 
-https://user-images.githubusercontent.com/58986949/3a9f53a5-aa1a-432f-887c-fc810f8f56a8.mp4
+https://github.com/user-attachments/assets/494c6796-d86f-44e5-b276-4133cdec2b90
 
 ## 🚀 Features
 
