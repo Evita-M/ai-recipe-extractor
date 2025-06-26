@@ -22,7 +22,7 @@ https://github.com/user-attachments/assets/494c6796-d86f-44e5-b276-4133cdec2b90
 - **Translate the recipe** (optional)
 - **Save recipes** to your Notion database (with all key fields and content blocks)
 - **OpenAI-powered** multi-agent pipeline for smart extraction and publishing
-- **REST API** for easy integration
+- **REST API** with streamed response for easy integration
 - **Monorepo** with shared UI components and configs
 
 ## 🛠️ Getting Started
