@@ -11,7 +11,7 @@
 ![REST API](https://img.shields.io/badge/REST_API-%23EE2950.svg?style=for-the-badge&logo=fastapi&logoColor=white)
 ![pnpm](https://img.shields.io/badge/pnpm-222?style=for-the-badge&logo=pnpm&logoColor=F69220)
 
-A modern web app that extracts recipes from any website and saves them to your Notion database using OpenAI agents. Built with Next.js, TypeScript, and a shared UI component library.
+A modern web app that extracts recipes from any website, translates them and saves them to your Notion database using OpenAI agents. Built with Next.js, TypeScript, and a shared UI component library.
 
 https://github.com/user-attachments/assets/494c6796-d86f-44e5-b276-4133cdec2b90
 
